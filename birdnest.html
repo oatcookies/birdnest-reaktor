@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+  <title>Birdnest</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+  #errormarker { background-color: white; color: darkred; }
+  li { margin-bottom: 1em; }
+  </style>
+</head>
+<body onload="start()">
+<h1 style="margin-top:0;">Birdnest</h1>
+<p><noscript>Requires JavaScript.</noscript> Implementation by Eve Kivivuori. Refreshes in <span id=refresh>0</span>...</p>
+
+<div id=errormarker></div>
+<div id=out>No data just yet...</div>
+
+
+<script>
+"use strict";
+const fetch_uri = 'birdnest.json';
+const update_interval = 10; // seconds
+function G(id) { return document.getElementById(id); }
+
+function set_error() {
+  G('errormarker').innerText = 'Error fetching fresh data; trying again soon...';
+}
+
+function clear_error() {
+  G('errormarker').innerText = '';
+}
+
+function update_data() {
+  fetch(fetch_uri)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+      clear_error();
+      return response.json();
+    })
+    .then((data) => {
+      console.log(data.length);
+      show_data(data);
+    })
+    .catch((err) => {
+      console.error(`Fetch problem: ${err.message}`);
+      set_error();
+    });
+}
+
+function show_data(data) {
+  if (data.length <= 0) {
+    G('out').replaceChildren(document.createTextNode('No data at the moment.'));
+    return;
+  }
+  const ul = document.createElement('ul');
+  for (const violator of data) {
+    const li = document.createElement('li');
+    const drone_id_node = document.createElement('code');
+    drone_id_node.innerText = violator.id;
+
+    li.replaceChildren(
+      document.createTextNode(`Distance: ${violator.dist} meters. Last seen at ${violator.seen}.`),
+      document.createElement('br'),
+      document.createTextNode(violator.named ? `Pilot: ${violator.name} (phone: ${violator.phone}, email: ${violator.email}). ` : 'Pilot: unknown. '),
+      document.createElement('br'),
+      document.createTextNode('Drone: '),
+      drone_id_node,
+    );
+
+    ul.appendChild(li);
+  }
+  G('out').replaceChildren(ul);
+}
+
+function refresh_counter(num) {
+  if (num <= 0) {
+    update_data();
+    G('refresh').innerText = num.toString();
+    setTimeout(refresh_counter, 1000, update_interval);
+  } else {
+    G('refresh').innerText = num.toString();
+    setTimeout(refresh_counter, 1000, num-1);
+  }
+}
+
+function start() {
+  update_data();
+  refresh_counter(update_interval);
+}
+</script>
+
+</body>
+</html>
