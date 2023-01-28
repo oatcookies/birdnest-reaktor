@@ -32,7 +32,7 @@ function clear_error() {
 }
 
 function update_data() {
-  fetch(fetch_uri)
+  fetch(fetch_uri, { cache: 'no-cache' })
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error: ${response.status}`);
